@@ -8,4 +8,4 @@ credentials = {
         'client_secret': 'your_spotipy_client_secret',
     }
 }
-directory = r""
+directory = r"C:\Users\erikr\Documents\PyCharm\musicMood\fma_large"

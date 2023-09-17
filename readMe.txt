@@ -6,3 +6,6 @@
 - had to transform the mp3 files to wav files
 - the database I had already had tons of metadata on the songs but I wanted to do the extracting myself for funsies and practice
 - downloaded the music to train the model from https://github.com/mdeff/fma
+
+
+Note: download ffmpeg and add it to the project folder to be able to convert your mp3s to wav
