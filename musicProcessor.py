@@ -1,28 +1,28 @@
 from API.GeniusInterface import GeniusInterface
 from API.SpotipyInterface import SpotipyInterface
+from constants import directory
 from moodAnalyzer import MoodAnalyzer
+import os
 
 
 class MusicProcessor:
-    def __init__(self, songs):
+    def __init__(self):
         self.sp = SpotipyInterface()
-        self.songs = songs
         self.moodAnalyzer = MoodAnalyzer(self.sp)
         self.genius = GeniusInterface()
 
-    def process_songs(self, songs):
-        inputData = {}
+    def process_songs(self):
+        result = []
+        analysis = None
 
         # for song in songs:
-        file_path = r'C:\Users\erikr\Documents\PyCharm\musicMood\Slow Dancing in a Burning Room [Live].wav'
-            # track_name = song['track_name']
-            # artist_name = song['artist_name']
-            # external API calls
-            # track_uri = self.sp.get_track_uri(track_name, artist_name)
-            # lyrics = self.genius.get_lyrics(track_name, artist_name)
-
-        result = self.moodAnalyzer.analyze_music(file_path, None, None)
-
-            # inputData[f"{track_name}_{artist_name}"] = result
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.lower().endswith('.wav'):
+                    file_path = os.path.join(root, file)
+                    analysis = self.moodAnalyzer.analyze_music(file_path, None, None)
+                    if analysis is not None:
+                        result.append(analysis)
+            print(f"Finished {root}")
 
         return result
