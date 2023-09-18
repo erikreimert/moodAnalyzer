@@ -1,74 +1,55 @@
-import warnings
-
-from textblob import TextBlob
-import librosa
-import madmom
+import csv
 import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
 
 
-class MoodAnalyzer:
-    def __init__(self, sp):
-        self.sp = sp
+def moodAnalyzer():
+    # Load data from CSV
+    # Load data from CSV, skip first row
+    with open('inputData.csv', mode='r') as file:
+        reader = csv.DictReader(file)
+        next(reader)  # Skip the header row
+        data = []
+        for row in reader:
+            tempo = float(row['tempo'])
+            energy = float(row['energy'])
+            data.append({'tempo': tempo, 'key': row['key'], 'energy': energy})
 
-    @staticmethod
-    def get_tempo(file_path):
-        # Load audio file
-        y, sr = librosa.load(file_path)
+    # Extract features
+    features = np.array([[song['tempo'], song['energy']] for song in data])
 
-        # Extract tempo
-        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+    # Normalize data
+    scaler = StandardScaler()
+    normalized_features = scaler.fit_transform(features)
 
-        return tempo
+    # Encode categorical 'key'
+    key_encoder = OneHotEncoder()
+    encoded_key = key_encoder.fit_transform(np.array([song['key'] for song in data]).reshape(-1, 1)).toarray()
 
-    @staticmethod
-    def get_lyrical_sentiment(lyrics):
-        blob = TextBlob(lyrics)
-        sentiment = blob.sentiment.polarity
-        return sentiment
+    # Combine features
+    encoded_data = np.concatenate((normalized_features, encoded_key), axis=1)
 
-    @staticmethod
-    def get_key(file_path):
-        # Load the CNN key detection processor
-        key_processor = madmom.features.key.CNNKeyRecognitionProcessor()
+    # Apply K-means clustering
+    n_clusters = 3  # Adjust as needed
+    kmeans = KMeans(n_clusters=n_clusters)
+    clusters = kmeans.fit_predict(encoded_data)
 
-        # Load the audio file
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            audio, sample_rate = madmom.io.audio.load_audio_file(file_path)
+    visualize_clusters(encoded_data, clusters)
 
-        # Process the audio to get key estimate
-        key_estimation = key_processor(audio)
+    # 'clusters' now contains the cluster assignments for each song
+    return clusters
 
-        # Get the estimated key
-        key_probabilities = key_estimation[0]
 
-        # Get the index of the maximum value, which corresponds to the estimated key
-        estimated_key_index = np.argmax(key_probabilities)
+def visualize_clusters(encoded_data, clusters):
+    pca = PCA(n_components=2)
+    pca_result = pca.fit_transform(encoded_data)
 
-        # Define a list of possible key names
-        key_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-
-        # Get the estimated key name
-        estimated_key = key_names[estimated_key_index % 12]
-
-        return estimated_key
-
-    @staticmethod
-    def get_energy(file_path):
-        y, sr = librosa.load(file_path)
-        rms_energy = np.sqrt(np.mean(np.square(y)))  # root mean squared
-        return rms_energy
-
-    def analyze_music(self, file_path, track_uri, lyrics):
-        tempo = self.get_tempo(file_path)
-        key = self.get_key(file_path)
-        # energy = self.sp.get_energy_level(track_uri)  # offloaded to spotipy for ease of use
-        energy = self.get_energy(file_path)  # rms of midi
-        # sentiment = self.get_lyrical_sentiment(lyrics)
-
-        return {
-            "tempo": tempo,
-            "key": key,
-            "energy": energy,
-            # "sentiment": sentiment
-        }
+    plt.scatter(pca_result[:, 0], pca_result[:, 1], c=clusters, cmap='viridis')
+    plt.colorbar()
+    plt.title('Cluster Visualization')
+    plt.xlabel('PCA 1')
+    plt.ylabel('PCA 2')
+    plt.show()
