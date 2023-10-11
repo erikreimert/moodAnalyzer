@@ -42,3 +42,7 @@ The sentiment analysis feature (get_lyrical_sentiment) is currently commented ou
 Ensure that your data is formatted correctly in the CSV file (inputData.csv).
 Adjust the number of clusters (n_clusters) in the moodAnalyzer function as needed for your specific analysis.
 
+
+Unimplemented features:
+The API's for Spotify and Genius have been implemented and can be added to the keyFeatureExtractor if needed so. I decided against them as I wanted to see if I could extract that data myself.
+
